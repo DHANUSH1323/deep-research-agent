@@ -24,5 +24,15 @@ SPARSE_MODEL_NAME = "Qdrant/bm25"
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
+ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+PLANNER_MODEL = "claude-sonnet-4-6"
+CRITIC_MODEL = "claude-sonnet-4-6"
+WRITER_MODEL = "claude-sonnet-4-6"
+SUBAGENT_MODEL = "claude-haiku-4-5-20251001"
+
+LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")
+LANGFUSE_PUBLIC_KEY = os.getenv("LANGFUSE_PUBLIC_KEY")
+LANGFUSE_BASE_URL = os.getenv("LANGFUSE_BASE_URL", "https://us.cloud.langfuse.com")
+
 CHUNK_SIZE = 2000
 CHUNK_OVERLAP = 200
