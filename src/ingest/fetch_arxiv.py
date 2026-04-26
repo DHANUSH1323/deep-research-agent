@@ -62,13 +62,3 @@ def fetch_papers(query: str, max_results: int) -> int:
             print(f"  saved ({count}): {arxiv_id}  {title_short}")
 
     return count
-
-
-def main() -> None:
-    print("Fetching from arXiv...")
-    count = fetch_papers(query="transformer attention mechanism", max_results=5)
-    print(f"\nDone. Saved {count} new papers.")
-
-
-if __name__ == "__main__":
-    main()

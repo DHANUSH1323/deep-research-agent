@@ -6,7 +6,6 @@ from qdrant_client.models import Fusion, FusionQuery, Prefetch
 
 from src.config import COLLECTION
 from src.embeddings import embed_dense, embed_sparse
-from src.qdrant_setup import get_qdrant_client
 
 PREFETCH_LIMIT_MULTIPLIER = 4
 
@@ -35,22 +34,3 @@ def search(
         with_payload=True,
     )
     return [{"score": p.score, "payload": p.payload} for p in response.points]
-
-
-def main() -> None:
-    client = get_qdrant_client()
-    question = "How does attention mechanism work in transformers?"
-    print(f"Question: {question}\n")
-
-    results = search(client, question, top_k=5)
-    for i, hit in enumerate(results, start=1):
-        payload = hit["payload"]
-        text_preview = payload["text"][:200].replace("\n", " ")
-        print(f"--- Result {i} (score={hit['score']:.4f}) ---")
-        print(f"  arxiv_id: {payload['arxiv_id']}  page {payload['page_num']}")
-        print(f"  chunk_id: {payload['chunk_id']}")
-        print(f"  text: {text_preview}...\n")
-
-
-if __name__ == "__main__":
-    main()

@@ -6,8 +6,6 @@ from pathlib import Path
 
 import pymupdf
 
-from src.config import PARSED_DIR, PDFS_DIR
-
 
 def parse_pdf(pdf_path: Path) -> dict:
     """Extract text from a PDF, page by page."""
@@ -30,18 +28,3 @@ def save_parsed(result: dict, out_dir: Path) -> Path:
     out_path = out_dir / f"{result['arxiv_id']}.json"
     out_path.write_text(json.dumps(result))
     return out_path
-
-
-def main() -> None:
-    for pdf_path in sorted(PDFS_DIR.glob("*.pdf")):
-        out_path = PARSED_DIR / f"{pdf_path.stem}.json"
-        if out_path.exists():
-            print(f"{pdf_path.stem}: already parsed, skipping")
-            continue
-        result = parse_pdf(pdf_path)
-        save_parsed(result, PARSED_DIR)
-        print(f"{result['arxiv_id']}: {result['num_pages']} pages")
-
-
-if __name__ == "__main__":
-    main()

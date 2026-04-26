@@ -23,11 +23,12 @@ DENSE_DIM = 384
 SPARSE_MODEL_NAME = "Qdrant/bm25"
 
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+GROQ_CONTEXTUALIZER_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
 
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-PLANNER_MODEL = "claude-sonnet-4-6"
-CRITIC_MODEL = "claude-sonnet-4-6"
-WRITER_MODEL = "claude-sonnet-4-6"
+PLANNER_MODEL = "claude-haiku-4-5-20251001"
+CRITIC_MODEL = "claude-haiku-4-5-20251001"
+WRITER_MODEL = "claude-haiku-4-5-20251001"
 SUBAGENT_MODEL = "claude-haiku-4-5-20251001"
 
 LANGFUSE_SECRET_KEY = os.getenv("LANGFUSE_SECRET_KEY")

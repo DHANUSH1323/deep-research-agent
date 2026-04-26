@@ -6,7 +6,7 @@ from pathlib import Path
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
-from src.config import CHUNK_OVERLAP, CHUNK_SIZE, CHUNKS_DIR, PARSED_DIR
+from src.config import CHUNK_OVERLAP, CHUNK_SIZE
 
 
 def chunk_parsed_paper(parsed: dict) -> list[dict]:
@@ -37,22 +37,3 @@ def save_chunks(chunks: list[dict], out_path: Path) -> None:
     with out_path.open("w", encoding="utf-8") as f:
         for chunk in chunks:
             f.write(json.dumps(chunk) + "\n")
-
-
-def main() -> None:
-    for parsed_path in sorted(PARSED_DIR.glob("*.json")):
-        out_path = CHUNKS_DIR / f"{parsed_path.stem}.jsonl"
-        if out_path.exists():
-            print(f"{parsed_path.stem}: already chunked, skipping")
-            continue
-
-        with parsed_path.open("r", encoding="utf-8") as f:
-            parsed = json.load(f)
-
-        chunks = chunk_parsed_paper(parsed)
-        save_chunks(chunks, out_path)
-        print(f"{parsed['arxiv_id']}: {parsed['num_pages']} pages -> {len(chunks)} chunks")
-
-
-if __name__ == "__main__":
-    main()
