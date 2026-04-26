@@ -1,63 +1,61 @@
-from fastembed import TextEmbedding, SparseTextEmbedding
-from qdrant_client import QdrantClient
-import os, json, uuid
-from dotenv import load_dotenv
-from qdrant_client.models import VectorParams, Distance, SparseVectorParams, Modifier, PointStruct, SparseVector
-from pathlib import Path
+"""Embed contextualized chunks and upsert them to Qdrant (dense + sparse)."""
+from __future__ import annotations
 
-load_dotenv()
+import json
+import uuid
 
-dense_model = TextEmbedding(model_name="BAAI/bge-small-en-v1.5")
-sparse_model = SparseTextEmbedding(model_name="Qdrant/bm25")
-COLLECTION = "papers"
+from qdrant_client.models import PointStruct
+
+from src.config import COLLECTION, CONTEXTUALIZED_DIR
+from src.embeddings import embed_dense, embed_sparse
+from src.qdrant_setup import ensure_collection, get_qdrant_client
+
+BATCH_SIZE = 32
 
 
-def create_collection(client) -> None:
-    if client.collection_exists(COLLECTION):
-        print(f"Collection '{COLLECTION}' already exists")
-    else:
-        client.create_collection(
-            collection_name=COLLECTION,
-            vectors_config={"dense": VectorParams(size=384, distance=Distance.COSINE)},
-            sparse_vectors_config={"bm25": SparseVectorParams(modifier=Modifier.IDF)}
-        )
-        print(f"Collection '{COLLECTION}' created")
+def build_point(chunk: dict) -> PointStruct:
+    """Construct a Qdrant point (dense + sparse vectors + payload) from a chunk dict."""
+    text_to_embed = chunk["context"] + "\n\n" + chunk["text"]
+    return PointStruct(
+        id=str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk["chunk_id"])),
+        vector={
+            "dense": embed_dense(text_to_embed),
+            "bm25": embed_sparse(text_to_embed),
+        },
+        payload={
+            "chunk_id": chunk["chunk_id"],
+            "arxiv_id": chunk["arxiv_id"],
+            "chunk_index": chunk["chunk_index"],
+            "page_num": chunk["page_num"],
+            "text": chunk["text"],
+            "context": chunk["context"],
+        },
+    )
 
-if __name__ == "__main__":
-    client = QdrantClient(url=os.getenv("QDRANT_URL"))
-    create_collection(client)
-    project_root = Path(__file__).resolve().parents[2]
-    context_chunk = project_root / "data" / "contextualized_chunks"
-    batch = []
+
+def main() -> None:
+    client = get_qdrant_client()
+    ensure_collection(client)
+
+    batch: list[PointStruct] = []
     total = 0
-    for chunk_file in sorted(context_chunk.glob("*.jsonl")):
+
+    for chunk_file in sorted(CONTEXTUALIZED_DIR.glob("*.jsonl")):
         with chunk_file.open("r", encoding="utf-8") as f:
-            for chunk in f:
-                chunk = json.loads(chunk)
-                text_to_embed = chunk["context"] + "\n\n" + chunk["text"]
-                dense_vectors = list(dense_model.embed([text_to_embed]))[0]
-                sparse_vectors = list(sparse_model.embed([text_to_embed]))[0]
-                point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, chunk["chunk_id"]))
-                point = PointStruct(
-                    id = point_id,
-                    vector={
-                        "dense": dense_vectors.tolist(),
-                        "bm25": SparseVector(indices=sparse_vectors.indices.tolist(), values=sparse_vectors.values.tolist())
-                    },
-                    payload={
-                        "chunk_id": chunk["chunk_id"],
-                        "arxiv_id": chunk["arxiv_id"],
-                        "chunk_index": chunk["chunk_index"],
-                        "page_num": chunk["page_num"],
-                        "text": chunk["text"],
-                        "context": chunk["context"]
-                    }
-                )
-                batch.append(point)
-                if len(batch) >= 32:
+            for line in f:
+                chunk = json.loads(line)
+                batch.append(build_point(chunk))
+                if len(batch) >= BATCH_SIZE:
                     client.upsert(collection_name=COLLECTION, points=batch)
                     total += len(batch)
                     print(f"Upserted {total} points")
                     batch = []
+
     if batch:
         client.upsert(collection_name=COLLECTION, points=batch)
+        total += len(batch)
+        print(f"Upserted {total} points (final)")
+
+
+if __name__ == "__main__":
+    main()

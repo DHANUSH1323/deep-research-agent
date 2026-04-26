@@ -1,49 +1,63 @@
+"""Add LLM-generated contextual prefixes to chunks (Anthropic-style retrieval)."""
+from __future__ import annotations
+
+import json
+import time
 from pathlib import Path
-import json, time
+
+from src.config import CHUNKS_DIR, CONTEXTUALIZED_DIR, METADATA_PATH
 from src.llm.client import get_client
-from src.llm.prompts import MODEL, CONTEXTUALIZER_SYSTEM_PROMPT
+from src.llm.prompts import CONTEXTUALIZER_SYSTEM_PROMPT, MODEL
+
 
 def load_abstracts(metadata_path: Path) -> dict[str, str]:
-    result = {}
-    with metadata_path.open("r", encoding='utf-8') as f:
+    """Load all paper abstracts into {arxiv_id: abstract}."""
+    result: dict[str, str] = {}
+    with metadata_path.open("r", encoding="utf-8") as f:
         for line in f:
-            metadata = json.loads(line)
-            result[metadata["arxiv_id"]] = metadata["abstract"]
+            row = json.loads(line)
+            result[row["arxiv_id"]] = row["abstract"]
     return result
 
 
-def contextualize_chunk(client, abstract, chunk_text) -> str:
+def contextualize_chunk(client, abstract: str, chunk_text: str) -> str:
+    """Call the LLM to produce a 1-2 sentence contextual prefix for one chunk."""
     messages = [
         {"role": "system", "content": CONTEXTUALIZER_SYSTEM_PROMPT},
-        {"role": "user", "content":f"Abstract:\n{abstract}\n\nChunk:\n{chunk_text}\n\nWrite the contextual prefix now:"}
+        {
+            "role": "user",
+            "content": (
+                f"Abstract:\n{abstract}\n\n"
+                f"Chunk:\n{chunk_text}\n\n"
+                "Write the contextual prefix now:"
+            ),
+        },
     ]
-
     response = client.chat.completions.create(
         model=MODEL,
         messages=messages,
         max_tokens=150,
-        temperature=0.2
+        temperature=0.2,
     )
     return response.choices[0].message.content.strip()
 
 
-if __name__ == "__main__":
-    project_root = Path(__file__).resolve().parents[2]
-    abstracts = load_abstracts(project_root / "data" / "metadata.jsonl")
-    chunks_path = project_root /"data"/ "chunks"
-    out_path = project_root / "data" / "contextualized_chunks"
+def main() -> None:
+    abstracts = load_abstracts(METADATA_PATH)
     client = get_client()
 
-    for chunk_file in sorted(chunks_path.glob("*.jsonl")):
-        out_filepath = out_path / chunk_file.name
-        out_filepath.parent.mkdir(parents=True, exist_ok=True)
-        if out_filepath.exists():
-            print(f"Skipping {chunk_file.name} as it has already been contextualized.")
+    for chunks_path in sorted(CHUNKS_DIR.glob("*.jsonl")):
+        out_path = CONTEXTUALIZED_DIR / chunks_path.name
+        if out_path.exists():
+            print(f"{chunks_path.stem}: already contextualized, skipping")
             continue
-        arxiv_id = chunk_file.stem
+
+        arxiv_id = chunks_path.stem
         abstract = abstracts[arxiv_id]
-        with out_filepath.open("w", encoding ='utf-8') as out_f, \
-            chunk_file.open("r", encoding='utf-8') as in_f:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with out_path.open("w", encoding="utf-8") as out_f, \
+             chunks_path.open("r", encoding="utf-8") as in_f:
             for line in in_f:
                 chunk = json.loads(line)
                 prefix = contextualize_chunk(client, abstract, chunk["text"])
@@ -55,3 +69,6 @@ if __name__ == "__main__":
 
         print(f"{arxiv_id}: done")
 
+
+if __name__ == "__main__":
+    main()
