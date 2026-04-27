@@ -20,3 +20,11 @@ class ResearchResult(BaseModel):
     sub_question: str = Field(description="The sub-question this result addresses.")
     findings: list[Finding] = Field(description="The cited findings gathered.")
     summary: str = Field(description="A 2-3 sentence synthesis of the findings.")
+
+class PaperSummary(BaseModel):
+    """Summary of one paper, including its contributions and methods."""
+    arxiv_id: str = Field(description="Arxiv identifier of the paper.")
+    summary: str = Field(description="A 2-3 sentence summary of this paper for non-exports")
+    key_contributions: list[Finding] = Field(description="The 2-4 main contributins of paper claims, each with citations to the chunks where they're supported.")
+    methodology: list[Finding] = Field(description="A description of the methods used in the paper, with citations to the chunks where they're described.")
+    notable_results: list[Finding] = Field(description="A description of the main results of the paper, with citations to the chunks where they're described.")

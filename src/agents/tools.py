@@ -2,7 +2,8 @@
 from langchain_core.tools import tool
 
 from src.qdrant_setup import get_qdrant_client
-from src.retrieval import search
+from src.retrieval import search, get_paper_chunks
+
 
 _qdrant_client = get_qdrant_client()
 
@@ -32,3 +33,26 @@ def search_corpus(query: str, top_k: int = 5) -> str:
             f"{payload['text']}"
         )
     return "\n\n".join(blocks)
+
+
+@tool
+def get_paper_full_text(arxiv_id: str) -> str:
+    """Fetch all chunks of one specific paper, in reading order.
+    
+    Use this when you need to deeply analyze one specific paper to summarize
+    its contributions, methods, and results.
+    
+    Args:
+        arxiv_id: The paper identifier (e.g., "1809.04281v3").
+    """
+    results = get_paper_chunks(_qdrant_client, arxiv_id)
+    if not results:
+        return f"No paper found for arxiv_id: {arxiv_id}."
+    
+    chunks = []
+    for chunk in results:
+        chunks.append(
+            f"[page_num={chunk['page_num']}, chunk_index={chunk['chunk_index']}, chunk_id={chunk['chunk_id']}]:\n{chunk['text']}"
+        )
+    return "\n\n".join(chunks)
+

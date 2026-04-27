@@ -1,12 +1,12 @@
-"""Smoke-test the research subagent against the local corpus."""
-from src.agents.subagent import research
+"""Smoke-test the search agent against the local corpus."""
+from src.agents.search_agent import run_search_agent
 
-SUB_QUESTION = "How does relative positional encoding work in the Music Transformer?"
+QUESTION = "How does relative positional encoding work in the Music Transformer?"
 
 
 def main() -> None:
-    print(f"Sub-question: {SUB_QUESTION}\n")
-    result = research(SUB_QUESTION)
+    print(f"Question: {QUESTION}\n")
+    result = run_search_agent(QUESTION)
     print(f"Summary: {result.summary}\n")
     print(f"{len(result.findings)} findings:")
     for i, finding in enumerate(result.findings, start=1):

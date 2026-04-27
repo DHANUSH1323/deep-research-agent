@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from qdrant_client import QdrantClient
-from qdrant_client.models import Fusion, FusionQuery, Prefetch
+from qdrant_client.models import Fusion, FusionQuery, Prefetch, Filter, FieldCondition, MatchValue
 
 from src.config import COLLECTION
 from src.embeddings import embed_dense, embed_sparse
@@ -34,3 +34,16 @@ def search(
         with_payload=True,
     )
     return [{"score": p.score, "payload": p.payload} for p in response.points]
+
+
+def get_paper_chunks(client: QdrantClient, arxiv_id: str) -> list[dict]:
+    """Get all chunks for a given paper (identified by arxiv_id)."""
+    paper_filter = Filter(
+        must=[
+            FieldCondition(key="arxiv_id", match=MatchValue(value=arxiv_id))
+        ]
+    )
+    scroll = client.scroll(collection_name=COLLECTION, scroll_filter=paper_filter, with_payload=True, limit=500, with_vectors=False)
+    payloads = [p.payload for p in scroll[0] if p.payload is not None]
+    return sorted(payloads, key=lambda p: (p["page_num"], p["chunk_index"]))
+    
