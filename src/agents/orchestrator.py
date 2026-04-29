@@ -48,6 +48,6 @@ def run_orchestrator(user_query: str) -> FinalReport:
 
     output = agent.invoke(
         {"messages": [{"role": "user", "content": user_query}]},
-        config={"callbacks": [handler]},
+        config={"callbacks": [handler], "run_name": "deep-research-agent"},
     )
     return output["structured_response"]

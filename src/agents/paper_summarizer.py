@@ -33,6 +33,6 @@ def run_paper_summarizer(arxiv_id: str) -> PaperSummary:
 
     output = agent.invoke(
         {"messages": [{"role": "user", "content": f"Summarize this paper:\n{arxiv_id}"}]},
-        config={"callbacks": [handler]},
+        config={"callbacks": [handler], "run_name": "paper_summarizer"},
     )
     return output["structured_response"]

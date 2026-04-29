@@ -35,6 +35,6 @@ def run_search_agent(question: str) -> ResearchResult:
 
     output = agent.invoke(
         {"messages": [{"role": "user", "content": f"Research question:\n{question}"}]},
-        config={"callbacks": [handler]},
+        config={"callbacks": [handler], "run_name": "search_agent"},
     )
     return output["structured_response"]
