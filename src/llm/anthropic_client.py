@@ -10,7 +10,7 @@ def get_anthropic_client() -> Anthropic:
     return Anthropic(api_key=ANTHROPIC_API_KEY)
 
 
-def get_chat_anthropic(model: str, max_tokens: int = 2048) -> ChatAnthropic:
+def get_chat_anthropic(model: str, max_tokens: int = 16384) -> ChatAnthropic:
     """Build a LangChain ChatAnthropic client used in LangGraph nodes.
 
     Supports all Anthropic features (prompt caching, citations, thinking)

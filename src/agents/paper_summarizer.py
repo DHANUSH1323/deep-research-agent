@@ -1,18 +1,20 @@
-"""Paper_summarizer: This agent is responsible for depp reading one paper and 
-returns a PaperSummary with key contributions, methods and results"""
+"""Paper-summarizer subagent: deep-reads one paper and returns a PaperSummary with key contributions, methods, and results."""
+
 
 from __future__ import annotations
 
-from src import config
-from src.agents.schemas import PaperSummary
-from src.agents.tools import get_paper_full_text
-from src.llm.prompts import PAPER_SUMMARIZER_SYSTEM_PROMPT
+from functools import lru_cache
 
 from langchain.agents import create_agent
-from langfuse.langchain import CallbackHandler
+
+from src.agents.schemas import PaperSummary
+from src.agents.tools import get_paper_full_text
 from src.config import SUBAGENT_MODEL
 from src.llm.anthropic_client import get_chat_anthropic
+from src.llm.prompts import PAPER_SUMMARIZER_SYSTEM_PROMPT
+from src.observability import get_callback_handler
 
+@lru_cache(maxsize=1)
 def build_paper_summarizer():
     """Construct the paper summarizer agent: Claude + get_paper_full_text + structured output."""
     llm = get_chat_anthropic(SUBAGENT_MODEL)
@@ -27,7 +29,7 @@ def build_paper_summarizer():
 def run_paper_summarizer(arxiv_id: str) -> PaperSummary:
     """Run the paper summarizer agent on one paper; return PaperSummary."""
     agent = build_paper_summarizer()
-    handler = CallbackHandler()
+    handler = get_callback_handler()
 
     output = agent.invoke(
         {"messages": [{"role": "user", "content": f"Summarize this paper:\n{arxiv_id}"}]},
