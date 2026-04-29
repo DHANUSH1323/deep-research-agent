@@ -28,3 +28,9 @@ class PaperSummary(BaseModel):
     key_contributions: list[Finding] = Field(description="The 2-4 main contributins of paper claims, each with citations to the chunks where they're supported.")
     methodology: list[Finding] = Field(description="A description of the methods used in the paper, with citations to the chunks where they're described.")
     notable_results: list[Finding] = Field(description="A description of the main results of the paper, with citations to the chunks where they're described.")
+
+class FinalReport(BaseModel):
+    """Final synthesized answer to a user research query, aggregated from subagent outputs."""
+    user_query: str = Field(description="The original research question from the user.")
+    executive_summary: str = Field(description="A 3-5 sentence direct answer to the user's question, synthesized from subagent findings. Every claim must be traceable to citations in findings.")
+    findings: list[Finding] = Field(description="Aggregated cited findings from subagent outputs that support the executive summary. At least one required.")
