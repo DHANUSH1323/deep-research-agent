@@ -3,12 +3,13 @@
 
 from __future__ import annotations
 
+import asyncio
 from functools import lru_cache
 
 from langchain.agents import create_agent
 
 from src.agents.schemas import PaperSummary
-from src.agents.tools import get_paper_full_text
+from src.agents.mcp_tools import get_mcp_tool
 from src.config import SUBAGENT_MODEL
 from src.llm.anthropic_client import get_chat_anthropic
 from src.llm.prompts import PAPER_SUMMARIZER_SYSTEM_PROMPT
@@ -20,7 +21,7 @@ def build_paper_summarizer():
     llm = get_chat_anthropic(SUBAGENT_MODEL)
     return create_agent(
         model=llm,
-        tools=[get_paper_full_text],
+        tools=[get_mcp_tool("get_paper_full_text")],
         system_prompt=PAPER_SUMMARIZER_SYSTEM_PROMPT,
         response_format=PaperSummary,
     )
@@ -31,8 +32,8 @@ def run_paper_summarizer(arxiv_id: str) -> PaperSummary:
     agent = build_paper_summarizer()
     handler = get_callback_handler()
 
-    output = agent.invoke(
+    output = asyncio.run(agent.ainvoke(
         {"messages": [{"role": "user", "content": f"Summarize this paper:\n{arxiv_id}"}]},
         config={"callbacks": [handler], "run_name": "paper_summarizer"},
-    )
+    ))
     return output["structured_response"]
