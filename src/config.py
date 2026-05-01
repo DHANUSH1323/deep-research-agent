@@ -20,6 +20,8 @@ COLLECTION = "papers"
 
 
 S3_BUCKET = os.getenv("S3_BUCKET", "deep-research-corpus")
+DYNAMODB_TABLE = os.getenv("DYNAMODB_TABLE", "dra-checkpoints")
+AWS_REGION = os.getenv("AWS_REGION", "us-east-2")
 
 
 DENSE_MODEL_NAME = "BAAI/bge-small-en-v1.5"
