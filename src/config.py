@@ -18,6 +18,10 @@ QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
 QDRANT_API_KEY = os.getenv("QDRANT_API_KEY") or None
 COLLECTION = "papers"
 
+
+S3_BUCKET = os.getenv("S3_BUCKET", "deep-research-corpus")
+
+
 DENSE_MODEL_NAME = "BAAI/bge-small-en-v1.5"
 DENSE_DIM = 384
 SPARSE_MODEL_NAME = "Qdrant/bm25"
