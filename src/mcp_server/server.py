@@ -1,6 +1,13 @@
-"""MCP server: exposes corpus retrieval tools (search_corpus, get_paper_full_text) over streamable HTTP."""
+"""MCP server: exposes corpus retrieval tools (search_corpus, get_paper_full_text).
+
+Supports two transports:
+  - streamable-http (default): for LangChain agents over HTTP. Run: `python src/mcp_server/server.py`.
+  - stdio: for Claude Desktop subprocess integration. Run: `python src/mcp_server/server.py stdio`.
+"""
+import sys
 
 from mcp.server.fastmcp import FastMCP
+
 from src.qdrant_setup import get_qdrant_client
 from src.retrieval import get_paper_chunks, search
 
@@ -57,4 +64,8 @@ def get_paper_full_text(arxiv_id: str) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(transport="streamable-http")
+    transport = sys.argv[1] if len(sys.argv) > 1 else "streamable-http"
+    if transport not in ("streamable-http", "stdio"):
+        sys.exit(f"Unsupported transport: {transport!r}. Use 'streamable-http' or 'stdio'.")
+    mcp.run(transport=transport)
+
